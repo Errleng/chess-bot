@@ -17,12 +17,12 @@ class Bot:
         self.board = None
 
         self.driver = webdriver.Firefox()
-        self.engine = chess.engine.SimpleEngine.popen_uci(ENGINE_RELATIVE_DIRECTORY + '/' + ENGINE_NAME)
+        self.load_engine(ENGINE_PATH, ENGINE_PROTOCOL)
         self.interface = SeleniumChess(self.driver)
 
-        self.setup_chess()
         self.setup_browser()
         self.setup_selenium_chess()
+        self.limit = chess.engine.Limit(depth=ENGINE_SEARCH_DEPTH)
 
     def game_end(move):
         return move == '1-0' or move == '0-1' or move == '1/2-1/2'
@@ -38,14 +38,18 @@ class Bot:
         return len(self.move_list) > 0 and not Bot.game_end(self.move_list[-1]) or len(
             self.move_list) == 0 and self.player == Side.WHITE
 
+    def load_engine(self, engine_path, engine_protocol):
+        if engine_protocol == 'uci':
+            self.engine = chess.engine.SimpleEngine.popen_uci(engine_path)
+        elif engine_protocol == 'xboard':
+            self.engine = chess.engine.SimpleEngine.popen_xboard(engine_path)
+        print('Loaded engine {0}'.format(self.engine.id['name']))
+
     def setup_browser(self):
         self.driver.maximize_window()
         self.driver.get(START_URL)
         self.login(USERNAME, PASSWORD)
         self.driver.get(PLAY_CHESS_URL)
-
-    def setup_chess(self):
-        pass
 
     def setup_selenium_chess(self):
         self.cvs_ctx.append(('first_cvs', 'first_ctx'))
@@ -102,7 +106,11 @@ class Bot:
 
                 intermediate_start_time = time.time()
 
-                self.engine_eval()
+                try:
+                    self.engine_eval()
+                except Exception as e:
+                    print('Exception evaluating: {0}'.format(e))
+                    continue
 
                 print('Time to evaluate: {0} seconds'.format(time.time() - intermediate_start_time))
 
@@ -140,18 +148,26 @@ class Bot:
             print(self.board)
 
     def engine_eval(self):
-        if USING_MULTIPV:
-            self.engine_moves.clear()
-            self.engine_scores.clear()
-            infos = self.engine.analyse(self.board, chess.engine.Limit(depth=ENGINE_SEARCH_DEPTH), multipv=MULTIPV_MOVE_COUNT)
-            for i in range(len(infos)):
-                info = infos[i]
-                self.engine_moves.append(info['pv'][0])
-                self.engine_scores.append(info['score'])
-        else:
-            info = self.engine.analyse(self.board, chess.engine.Limit(depth=ENGINE_SEARCH_DEPTH))
-            self.engine_moves = [info['pv'][-1]]
-            self.engine_scores = [info['score']]
+        try:
+            if USING_MULTIPV and 'MultiPV' in self.engine.options:
+                self.engine_moves.clear()
+                self.engine_scores.clear()
+                infos = self.engine.analyse(self.board, self.limit, multipv=MULTIPV_MOVE_COUNT)
+                for i in range(len(infos)):
+                    info = infos[i]
+                    self.engine_moves.append(info['pv'][0])
+                    self.engine_scores.append(info['score'])
+            else:
+                info = self.engine.analyse(self.board, self.limit)
+                self.engine_moves = [info['pv'][0]]
+                self.engine_scores = [info['score']]
+        except Exception as e:
+            print('Exception in evaluating: {0}'.format(e))
+            print('Falling back on Stockfish')
+
+            self.load_engine(ENGINE_RELATIVE_DIRECTORY + '/' + ENGINE_PATHS['stockfish'], ENGINE_PROTOCOLS['stockfish'])
+            self.engine_eval()
+            self.load_engine(ENGINE_PATH, ENGINE_PROTOCOL)
 
     def display_moves(self):
         main_ctx_name = self.cvs_ctx[0][1]

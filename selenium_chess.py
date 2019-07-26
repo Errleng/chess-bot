@@ -62,26 +62,15 @@ class SeleniumChess:
         return None
 
     def get_move_list(self):
-        moves = []
-
         script = ""
         script += "let elements = document.getElementsByClassName('{0}');".format(self.patterns['move'])
         script += "let contents = [];"
         script += "for (let i = 0; i < elements.length; i++) { contents.push(elements[i].innerText); }"
         script += "return contents;"
 
-        # try:
-        #     moves = self.driver.find_elements_by_class_name(self.patterns['move'])
-        # except NoSuchElementException:
-        #     print('No move elements found')
-        # try:
-        #     last_move = self.driver.find_element_by_class_name(self.patterns['selected_move'])
-        #     moves.append(last_move)
-        # except NoSuchElementException:
-        #     print('Last/Selected move not found')
-        start_time = time.time()
-
         try:
+            start_time = time.time()
+
             move_list = self.driver.execute_script(script)
 
             print('Time to get move text: {0} seconds'.format(time.time() - start_time))
