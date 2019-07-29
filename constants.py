@@ -23,7 +23,7 @@ PASSWORD = 'narnia'
 
 START_POS_FEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1'
 
-ENGINE_PATHS = {
+ENGINE_PATHS_WINDOWS = {
     'test': 'ProDeo 1.2/rebeluci.exe',
     'stockfish': 'stockfish-10-win/Windows/stockfish_10_x64_popcnt.exe',
     'strangler': 'Rodent III - Strangler/windows/RodentIII_x64_POPCNT_pgo.exe',
@@ -32,6 +32,10 @@ ENGINE_PATHS = {
     'opental': 'OpenTal/opental_x64popcnt.exe',
     'naum': 'naum.exe',
     'amyan': 'Amyan 1.72/amyan.exe'
+}
+
+ENGINE_PATHS_LINUX = {
+    'stockfish': 'stockfish-10-linux/Linux/stockfish_10_x64_modern'
 }
 
 ENGINE_PROTOCOLS = {
@@ -46,8 +50,8 @@ ENGINE_PROTOCOLS = {
 }
 
 ENGINE_RELATIVE_DIRECTORY = 'Engines'
-ENGINE_NAME = 'alekhine'
-ENGINE_PATH = ENGINE_RELATIVE_DIRECTORY + '/' + ENGINE_PATHS[ENGINE_NAME]
+ENGINE_NAME = 'stockfish'
+
 ENGINE_PROTOCOL = ENGINE_PROTOCOLS[ENGINE_NAME]
-ENGINE_SEARCH_DEPTH = 6
+ENGINE_SEARCH_DEPTH = 8
 ENGINE_SEARCH_TIME = 1

@@ -1,8 +1,11 @@
+import os
 import time
+
 import chess
 import chess.engine
 from selenium import webdriver
 from selenium.common.exceptions import StaleElementReferenceException
+
 from constants import *
 from selenium_chess import SeleniumChess
 
@@ -16,8 +19,8 @@ class Bot:
         self.player = None
         self.board = None
 
-        self.driver = webdriver.Firefox()
-        self.load_engine(ENGINE_PATH, ENGINE_PROTOCOL)
+        self.driver = webdriver.Firefox(executable_path='./geckodriver')
+        self.load_engine(ENGINE_NAME)
         self.interface = SeleniumChess(self.driver)
 
         self.setup_browser()
@@ -38,11 +41,21 @@ class Bot:
         return len(self.move_list) > 0 and not Bot.game_end(self.move_list[-1]) or len(
             self.move_list) == 0 and self.player == Side.WHITE
 
-    def load_engine(self, engine_path, engine_protocol):
+    def load_engine(self, engine_name):
+        engine_path = ENGINE_RELATIVE_DIRECTORY + '/'
+        if os.name == 'nt':  # Windows
+            engine_path += ENGINE_PATHS_WINDOWS[engine_name]
+        elif os.name == 'posix':
+            engine_path += ENGINE_PATHS_LINUX[engine_name]
+        else:
+            raise Exception('Unknown operating system: {0}'.format(os.name))
+
+        engine_protocol = ENGINE_PROTOCOLS[engine_name]
         if engine_protocol == 'uci':
             self.engine = chess.engine.SimpleEngine.popen_uci(engine_path)
         elif engine_protocol == 'xboard':
             self.engine = chess.engine.SimpleEngine.popen_xboard(engine_path)
+
         print('Loaded engine {0}'.format(self.engine.id['name']))
 
     def setup_browser(self):
@@ -135,7 +148,7 @@ class Bot:
         #     if last_move != self.move_list[-1]:
         #         self.move_list = self.interface.get_move_list()
         # else:
-            self.move_list = self.interface.get_move_list()
+        self.move_list = self.interface.get_move_list()
 
     def make_board(self):
         self.board = chess.Board(START_POS_FEN)
@@ -165,30 +178,39 @@ class Bot:
             print('Exception in evaluating: {0}'.format(e))
             print('Falling back on Stockfish')
 
-            self.load_engine(ENGINE_RELATIVE_DIRECTORY + '/' + ENGINE_PATHS['stockfish'], ENGINE_PROTOCOLS['stockfish'])
+            self.load_engine('stockfish')
             self.engine_eval()
-            self.load_engine(ENGINE_PATH, ENGINE_PROTOCOL)
+            self.load_engine(ENGINE_NAME)
 
     def display_moves(self):
-        main_ctx_name = self.cvs_ctx[0][1]
-        self.interface.graphics.clear_context(main_ctx_name)
-        if USING_MULTIPV:
-            if DRAW_TYPE == 'square':
-                for i in range(len(self.engine_moves)):
-                    self.interface.graphics.set_styles(main_ctx_name,
-                                                       fillStyle=MULTIPV_MOVE_COLOURS[i - MULTIPV_MOVE_COUNT])
-                    self.interface.draw_move_squares(main_ctx_name, self.engine_moves[i], self.player)
-            elif DRAW_TYPE == 'arrow':
-                alpha_step = 1 / len(self.engine_moves)
-                for i in range(len(self.engine_moves)):
-                    alpha = 1 - (i * alpha_step)
-                    self.interface.graphics.set_styles(main_ctx_name,
-                                                       globalAlpha=str(alpha))
-                    self.interface.draw_move_arrows(main_ctx_name, self.engine_moves[i], self.player)
-        else:
-            if DRAW_TYPE == 'square':
-                self.interface.graphics.set_styles(main_ctx_name, fillStyle="'blue'", globalAlpha='0.25')
-                self.interface.draw_move_squares(main_ctx_name, self.engine_moves[0], self.player)
-            elif DRAW_TYPE == 'arrow':
-                self.interface.graphics.set_styles(main_ctx_name, fillStyle="'black'", globalAlpha='1.0')
-                self.interface.draw_move_arrows(main_ctx_name, self.engine_moves[0], self.player)
+        try:
+            main_ctx_name = self.cvs_ctx[0][1]
+            self.interface.graphics.clear_context(main_ctx_name)
+            if USING_MULTIPV:
+                if DRAW_TYPE == 'square':
+                    for i in range(len(self.engine_moves)):
+                        self.interface.graphics.set_styles(main_ctx_name,
+                                                           fillStyle=MULTIPV_MOVE_COLOURS[i - MULTIPV_MOVE_COUNT])
+                        self.interface.draw_move_squares(main_ctx_name, self.engine_moves[i], self.player)
+                        self.interface.draw_score(main_ctx_name, self.engine_moves[i], self.engine_scores[i],
+                                                  self.player)
+                elif DRAW_TYPE == 'arrow':
+                    alpha_step = 1 / len(self.engine_moves)
+                    for i in range(len(self.engine_moves)):
+                        alpha = 1 - (i * alpha_step)
+                        self.interface.graphics.set_styles(main_ctx_name, fillStyle="'black'", globalAlpha=str(alpha))
+                        self.interface.draw_move_arrows(main_ctx_name, self.engine_moves[i], self.player)
+                        self.interface.draw_score(main_ctx_name, self.engine_moves[i], self.engine_scores[i],
+                                                  self.player)
+            else:
+                if DRAW_TYPE == 'square':
+                    self.interface.graphics.set_styles(main_ctx_name, fillStyle="'blue'", globalAlpha='0.25')
+                    self.interface.draw_move_squares(main_ctx_name, self.engine_moves[0], self.player)
+                elif DRAW_TYPE == 'arrow':
+                    self.interface.graphics.set_styles(main_ctx_name, fillStyle="'black'", globalAlpha='1.0')
+                    self.interface.draw_move_arrows(main_ctx_name, self.engine_moves[0], self.player)
+                self.interface.draw_score(main_ctx_name, self.engine_moves[0], self.engine_scores[0], self.player)
+        except Exception as e:
+            print('Exception displaying moves: {0}'.format(e))
+            print('Recreating contexts')
+            self.setup_selenium_chess()

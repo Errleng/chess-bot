@@ -28,4 +28,4 @@ class JSContext:
 
     def set_defaults(self):
         self.globalAlpha = '0.3'
-        self.font = "'30px Arial'"
+        self.font = "'20px Arial'"

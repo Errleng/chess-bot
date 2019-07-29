@@ -1,6 +1,7 @@
 import math
-from selenium import webdriver
+
 from selenium.common.exceptions import NoSuchElementException
+
 from js_classes import JSCanvas, JSContext
 from vector_2d import Vector2D
 
@@ -68,13 +69,15 @@ class SeleniumCanvas:
         script = "{0}.clearRect(0, 0, {1}.width, {1}.height);".format(context.name, context.canvas.name)
         self.driver.execute_script(script)
 
-    def set_styles(self, context_name, visibility=None, fillStyle=None, globalAlpha=None, font=None):
+    def set_styles(self, context_name, visibility=None, strokeStyle=None, fillStyle=None, globalAlpha=None, font=None):
         context = self.contexts[context_name]
         canvas_name = context.canvas.name
 
         script = ""
         if visibility is not None:
             script += "{0}.style.visibility = {1};".format(canvas_name, visibility)
+        if strokeStyle is not None:
+            script += "{0}.strokeStyle = {1};".format(canvas_name, strokeStyle)
         if fillStyle is not None:
             script += "{0}.fillStyle = {1};".format(context.name, fillStyle)
         if globalAlpha is not None:
@@ -89,6 +92,23 @@ class SeleniumCanvas:
         script = "{0}.fillText({1}, {2}, {3});".format(context.name, text, pos.x, pos.y)
         self.driver.execute_script(script)
 
+    def draw_centered_text(self, context_name, text, pos, strokeStyle="'black'", fillStyle=None):
+        context = self.contexts[context_name]
+        script = ""
+        script += "{0}.textAlign = 'center';".format(context.name)
+
+        if strokeStyle is not None:
+            self.set_styles(context.name, strokeStyle=strokeStyle, globalAlpha='1.0')
+        script += "{0}.strokeText('{1}', {2}, {3});".format(context.name, text, pos.x, pos.y)
+
+        if fillStyle is not None:
+            self.set_styles(context.name, fillStyle=fillStyle)
+        script += "{0}.fillText('{1}', {2}, {3});".format(context.name, text, pos.x, pos.y)
+
+        print(text, script)
+
+        self.driver.execute_script(script)
+
     def draw_filled_rect(self, context_name, pos, dim):
         context = self.contexts[context_name]
         script = "{0}.fillRect({1}, {2}, {3}, {4});".format(context.name, pos.x, pos.y, dim.x, dim.y)
@@ -99,8 +119,10 @@ class SeleniumCanvas:
         head_length = 20
         line_width = 5
         angle = math.atan2(to_pos.y - from_pos.y, to_pos.x - from_pos.x)
-        off_from = Vector2D(to_pos.x - head_length * math.cos(angle - math.pi / 7), to_pos.y - head_length * math.sin(angle - math.pi / 7))
-        off_to = Vector2D(to_pos.x - head_length * math.cos(angle + math.pi / 7), to_pos.y - head_length * math.sin(angle + math.pi / 7))
+        off_from = Vector2D(to_pos.x - head_length * math.cos(angle - math.pi / 7),
+                            to_pos.y - head_length * math.sin(angle - math.pi / 7))
+        off_to = Vector2D(to_pos.x - head_length * math.cos(angle + math.pi / 7),
+                          to_pos.y - head_length * math.sin(angle + math.pi / 7))
         script = "{0}.beginPath();" \
                  "{0}.lineWidth = {1};" \
                  "{0}.moveTo({2}, {3});" \
@@ -112,14 +134,14 @@ class SeleniumCanvas:
                  "{0}.lineTo({6}, {7});" \
                  "{0}.stroke();" \
                  "{0}.fill();".format(context.name,
-                                        line_width,
-                                        from_pos.x,
-                                        from_pos.y,
-                                        to_pos.x,
-                                        to_pos.y,
-                                        off_from.x,
-                                        off_from.y,
-                                        off_to.x,
-                                        off_to.y)
+                                      line_width,
+                                      from_pos.x,
+                                      from_pos.y,
+                                      to_pos.x,
+                                      to_pos.y,
+                                      off_from.x,
+                                      off_from.y,
+                                      off_to.x,
+                                      off_to.y)
 
         self.driver.execute_script(script)

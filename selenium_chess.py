@@ -1,9 +1,12 @@
+import time
+
+import chess.engine
 from selenium import webdriver
 from selenium.common.exceptions import NoSuchElementException, StaleElementReferenceException
-from vector_2d import Vector2D
-from selenium_canvas import SeleniumCanvas
+
 from constants import Side
-import time
+from selenium_canvas import SeleniumCanvas
+from vector_2d import Vector2D
 
 
 class SeleniumChess:
@@ -33,6 +36,9 @@ class SeleniumChess:
             self.board = self.driver.find_element_by_id(self.patterns['chessboard'])
         except NoSuchElementException:
             return False  # All elements must be found. No point in continuing if even one is missing
+        except Exception as e:
+            print('Exception in getting chessboard element: {0}'.format(e))
+            return False
         return True
 
     def update_variables(self):
@@ -83,7 +89,8 @@ class SeleniumChess:
         if bottom_color == Side.WHITE:
             pos = Vector2D(self.piece_dim * (ord(ply[0]) - 97), self.board_dim - self.piece_dim * int(ply[1]))
         elif bottom_color == Side.BLACK:
-            pos = Vector2D(self.piece_dim * (7 - (ord(ply[0]) - 97)), self.board_dim - self.piece_dim * (9 - int(ply[1])))
+            pos = Vector2D(self.piece_dim * (7 - (ord(ply[0]) - 97)),
+                           self.board_dim - self.piece_dim * (9 - int(ply[1])))
         else:
             print('Side to move should not be Side.NEITHER')
             return
@@ -115,3 +122,32 @@ class SeleniumChess:
         second_pos.y += center_offset
         self.graphics.set_styles(context_name, visibility="'visible'")
         self.graphics.draw_arrow(context_name, first_pos, second_pos)
+
+    def draw_score(self, context_name, move, score, bottom_color):
+        move_uci_string = move.uci()
+        center_offset = self.piece_dim // 2
+        start_ply = move_uci_string[:2]
+        end_ply = move_uci_string[2:4]
+        first_pos = self.notation_to_pos(start_ply, bottom_color)
+        first_pos.x += center_offset
+        first_pos.y += center_offset
+        second_pos = self.notation_to_pos(end_ply, bottom_color)
+        second_pos.x += center_offset
+        second_pos.y += center_offset
+        text_pos = Vector2D((first_pos.x + second_pos.x) / 2, (first_pos.y + second_pos.y) / 2)
+
+        relative_score = score.relative
+        if relative_score.is_mate():
+            if relative_score > chess.engine.Cp(0):
+                fillStyle = "'Blue'"
+            else:
+                fillStyle = "'DarkRed'"
+        else:
+            numeric_score = relative_score.score()
+            if numeric_score > 0:
+                fillStyle = "'Green'"
+            elif numeric_score < 0:
+                fillStyle = "'Red'"
+            else:
+                fillStyle = "'Gray'"
+        self.graphics.draw_centered_text(context_name, str(score), text_pos, fillStyle=fillStyle)
