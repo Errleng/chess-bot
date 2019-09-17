@@ -1,8 +1,0 @@
-[ENGINE]
-Name=RomiChess P3k
-Author=Michael J. Sherwin
-Filename=Wb2Uci.exe
-
-[OPTIONS]
-Program=romichess-p3k-64-ja.exe
-TerminateHard=false

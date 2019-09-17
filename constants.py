@@ -1,3 +1,4 @@
+import os
 from enum import Enum
 
 
@@ -18,20 +19,22 @@ PLAY_CHESS_URL = 'https://www.chess.com/live/'
 
 # USERNAME = 'monaeaei'
 # PASSWORD = 'emaaten'
-USERNAME = 'orgnaan'
-PASSWORD = 'narnia'
+# USERNAME = 'orgnaan'
+# PASSWORD = 'narnia'
+USERNAME = "FoolGarbage"
+PASSWORD = "manastry"
 
 START_POS_FEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1'
 
 ENGINE_PATHS_WINDOWS = {
-    'test': 'ProDeo 1.2/rebeluci.exe',
     'stockfish': 'stockfish-10-win/Windows/stockfish_10_x64_popcnt.exe',
     'strangler': 'Rodent III - Strangler/windows/RodentIII_x64_POPCNT_pgo.exe',
     'karpov': 'Rodent III - Karpov/windows/RodentIII_x64_POPCNT_pgo.exe',
     'alekhine': 'Rodent III - Alekhine/windows/RodentIII_x64_POPCNT_pgo.exe',
     'opental': 'OpenTal/opental_x64popcnt.exe',
     'naum': 'naum.exe',
-    'amyan': 'Amyan 1.72/amyan.exe'
+    'amyan': 'Amyan 1.72/amyan.exe',
+    'hiarcs': 'Hiarcs/DeepHiarcs14WCSC_AC4.exe'
 }
 
 ENGINE_PATHS_LINUX = {
@@ -39,19 +42,24 @@ ENGINE_PATHS_LINUX = {
 }
 
 ENGINE_PROTOCOLS = {
-    'test': 'uci',
     'stockfish': 'uci',
     'strangler': 'uci',
     'karpov': 'uci',
     'alekhine': 'uci',
     'opental': 'uci',
     'naum': 'uci',
-    'amyan': 'uci'
+    'amyan': 'uci',
+    'hiarcs': 'uci'
 }
 
 ENGINE_RELATIVE_DIRECTORY = 'Engines'
-ENGINE_NAME = 'stockfish'
+ENGINE_NAME = 'hiarcs'
 
 ENGINE_PROTOCOL = ENGINE_PROTOCOLS[ENGINE_NAME]
 ENGINE_SEARCH_DEPTH = 8
 ENGINE_SEARCH_TIME = 1
+
+if os.name == 'nt':
+    DRIVER_PATH = 'geckodriver.exe'
+elif os.name == 'posix':
+    DRIVER_PATH = './geckodriver'

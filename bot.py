@@ -19,7 +19,7 @@ class Bot:
         self.player = None
         self.board = None
 
-        self.driver = webdriver.Firefox(executable_path='./geckodriver')
+        self.driver = webdriver.Firefox(executable_path=DRIVER_PATH)
         self.load_engine(ENGINE_NAME)
         self.interface = SeleniumChess(self.driver)
 
@@ -56,7 +56,10 @@ class Bot:
         elif engine_protocol == 'xboard':
             self.engine = chess.engine.SimpleEngine.popen_xboard(engine_path)
 
-        print('Loaded engine {0}'.format(self.engine.id['name']))
+        if 'name' in self.engine.id:
+            print('Loaded engine {0}'.format(self.engine.id['name']))
+        else:
+            print('Engine name is unknown')
 
     def setup_browser(self):
         self.driver.maximize_window()

@@ -13,10 +13,10 @@ class SeleniumChess:
     def __init__(self, driver):
         self.patterns = {
             'chessboard': 'game-board',
-            'bottom_player_white': 'board-player-component board-player-bottom board-player-white undefined',
-            'bottom_player_black': 'board-player-component board-player-bottom board-player-black undefined',
-            'top_player_white': 'board-player-component board-player-top board-player-white undefined',
-            'top_player_black': 'board-player-component board-player-top board-player-black undefined',
+            'bottom_player_white': 'board-player-default-component board-player-default-bottom board-player-default-white undefined',
+            'bottom_player_black': 'board-player-default-component board-player-default-bottom board-player-default-black undefined',
+            'top_player_white': 'board-player-default-component board-player-default-bottom board-player-default-white undefined',
+            'top_player_black': 'board-player-default-component board-player-default-bottom board-player-default-black undefined',
             'move': 'vertical-move-list-clickable',
             'selected_move': 'move-text-selectednf',
         }

@@ -105,8 +105,6 @@ class SeleniumCanvas:
             self.set_styles(context.name, fillStyle=fillStyle)
         script += "{0}.fillText('{1}', {2}, {3});".format(context.name, text, pos.x, pos.y)
 
-        print(text, script)
-
         self.driver.execute_script(script)
 
     def draw_filled_rect(self, context_name, pos, dim):
