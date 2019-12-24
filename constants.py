@@ -34,7 +34,6 @@ ENGINE_PATHS_WINDOWS = {
     'opental': 'OpenTal/opental_x64popcnt.exe',
     'naum': 'naum.exe',
     'amyan': 'Amyan 1.72/amyan.exe',
-    'hiarcs': 'Hiarcs/DeepHiarcs14WCSC_AC4.exe'
 }
 
 ENGINE_PATHS_LINUX = {
@@ -49,11 +48,10 @@ ENGINE_PROTOCOLS = {
     'opental': 'uci',
     'naum': 'uci',
     'amyan': 'uci',
-    'hiarcs': 'uci'
 }
 
 ENGINE_RELATIVE_DIRECTORY = 'Engines'
-ENGINE_NAME = 'hiarcs'
+ENGINE_NAME = 'naum'
 
 ENGINE_PROTOCOL = ENGINE_PROTOCOLS[ENGINE_NAME]
 ENGINE_SEARCH_DEPTH = 8
