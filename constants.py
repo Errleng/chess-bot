@@ -17,12 +17,12 @@ MULTIPV_MOVE_COLOURS = ["'red'", "'salmon'", "'darkred'"]
 START_URL = 'https://www.chess.com/login_and_go?returnUrl=https%3A//www.chess.com/register'
 PLAY_CHESS_URL = 'https://www.chess.com/live/'
 
-# USERNAME = 'monaeaei'
-# PASSWORD = 'emaaten'
+USERNAME = 'monaeaei'
+PASSWORD = 'emaaten'
 # USERNAME = 'orgnaan'
 # PASSWORD = 'narnia'
-USERNAME = "FoolGarbage"
-PASSWORD = "manastry"
+# USERNAME = "FoolGarbage"
+# PASSWORD = "manastry"
 
 START_POS_FEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1'
 
@@ -51,11 +51,12 @@ ENGINE_PROTOCOLS = {
 }
 
 ENGINE_RELATIVE_DIRECTORY = 'Engines'
-ENGINE_NAME = 'naum'
+ENGINE_NAME = 'karpov'
 
 ENGINE_PROTOCOL = ENGINE_PROTOCOLS[ENGINE_NAME]
 ENGINE_SEARCH_DEPTH = 8
 ENGINE_SEARCH_TIME = 1
+ENGINE_ELO = 2000
 
 if os.name == 'nt':
     DRIVER_PATH = 'geckodriver.exe'

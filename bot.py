@@ -14,6 +14,7 @@ class Bot:
     def __init__(self):
         self.move_list = []
         self.cvs_ctx = []
+        self.engine_infos = []
         self.engine_moves = []
         self.engine_scores = []
         self.player = None
@@ -61,6 +62,20 @@ class Bot:
         else:
             print('Engine name is unknown')
 
+        print('Engine options')
+        for option in self.engine.options:
+            print(option)
+
+        options = {'UCI_LimitStrength': 'true',
+                   'UCI_Elo': ENGINE_ELO}
+
+        for option in list(options.keys()):
+            if option not in self.engine.options:
+                print(f'{option} is not an option for this engine')
+                del options[option]
+
+        self.engine.configure(options)
+
     def setup_browser(self):
         self.driver.maximize_window()
         self.driver.get(START_URL)
@@ -103,7 +118,6 @@ class Bot:
                     continue
 
                 intermediate_start_time = time.time()
-
                 self.make_board()  # self.board is None if failed
                 if self.board is None:
                     self.move_list = []  # rebuild move list if there's an error
@@ -130,9 +144,15 @@ class Bot:
 
                 print('Time to evaluate: {0} seconds'.format(time.time() - intermediate_start_time))
 
-                print("{0} is playing".format(turn_name))
+                print('{0} is playing'.format(turn_name))
                 for i in range(len(self.engine_moves)):
-                    print("Move {0} = {1}, Score {0} = {2}".format(i, self.engine_moves[i], self.engine_scores[i]))
+                    output_line = f'Move {i} = {self.engine_moves[i]}, Score = {self.engine_scores[i]}'
+                    if USING_MULTIPV:
+                        try:
+                            output_line += f', PV = {self.board.variation_san(self.engine_infos[i]["pv"])}'
+                        except Exception as e:
+                            print(f'Exception in multi PV output: {e}')
+                    print(output_line)
 
                 intermediate_start_time = time.time()
 
@@ -143,7 +163,9 @@ class Bot:
                 end_time = time.time()
                 print('Time elapsed = {0}s'.format(end_time - start_time))
             except StaleElementReferenceException:
-                print("Stale elements. Retrying...")
+                print('Stale elements. Retrying...')
+            except Exception as exception:
+                print(f'Main loop exception: {exception}')
 
     def scrape_move_list(self):
         # if len(self.move_list) > 0:
@@ -166,9 +188,12 @@ class Bot:
     def engine_eval(self):
         try:
             if USING_MULTIPV and 'MultiPV' in self.engine.options:
+                self.engine_infos.clear()
                 self.engine_moves.clear()
                 self.engine_scores.clear()
+
                 infos = self.engine.analyse(self.board, self.limit, multipv=MULTIPV_MOVE_COUNT)
+                self.engine_infos = infos
                 for i in range(len(infos)):
                     info = infos[i]
                     self.engine_moves.append(info['pv'][0])
