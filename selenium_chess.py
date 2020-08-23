@@ -75,12 +75,7 @@ class SeleniumChess:
         script += "return contents;"
 
         try:
-            start_time = time.time()
-
             move_list = self.driver.execute_script(script)
-
-            print('Time to get move text: {0} seconds'.format(time.time() - start_time))
-
             return move_list
         except StaleElementReferenceException:
             return self.get_move_list()

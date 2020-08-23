@@ -1,6 +1,7 @@
 ; "GM IN A BOX" Karpov personality for Rodent II.
 ; Author: BRENDAN J.NORMAN
 ;
+
 setoption name BookFilter value 170
 setoption name UseBook value false
 setoption name Contempt value 10

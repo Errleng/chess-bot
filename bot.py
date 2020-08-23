@@ -1,5 +1,5 @@
-import os
 import time
+from configparser import ConfigParser
 
 import chess
 import chess.engine
@@ -19,14 +19,19 @@ class Bot:
         self.engine_scores = []
         self.player = None
         self.board = None
+        self.last_move_list = []
+        self.position_eval_count = 0
+
+        self.config = ConfigParser()
+        self.config.read('config.ini')
 
         self.driver = webdriver.Firefox(executable_path=DRIVER_PATH)
-        self.load_engine(ENGINE_NAME)
+        self.load_engine(self.config['engine']['name'])
         self.interface = SeleniumChess(self.driver)
 
         self.setup_browser()
         self.setup_selenium_chess()
-        self.limit = chess.engine.Limit(depth=ENGINE_SEARCH_DEPTH)
+        self.limit = chess.engine.Limit(depth=self.config['engine'].getint('search_depth'))
 
     def game_end(move):
         return move == '1-0' or move == '0-1' or move == '1/2-1/2'
@@ -43,15 +48,15 @@ class Bot:
             self.move_list) == 0 and self.player == Side.WHITE
 
     def load_engine(self, engine_name):
-        engine_path = ENGINE_RELATIVE_DIRECTORY + '/'
+        engine_path = self.config['engine']['directory'] + '/'
         if os.name == 'nt':  # Windows
-            engine_path += ENGINE_PATHS_WINDOWS[engine_name]
+            engine_path += self.config['engine_paths_windows'][engine_name]
         elif os.name == 'posix':
-            engine_path += ENGINE_PATHS_LINUX[engine_name]
+            engine_path += self.config['engine_paths_linux'][engine_name]
         else:
             raise Exception('Unknown operating system: {0}'.format(os.name))
 
-        engine_protocol = ENGINE_PROTOCOLS[engine_name]
+        engine_protocol = self.config['engine']['protocol']
         if engine_protocol == 'uci':
             self.engine = chess.engine.SimpleEngine.popen_uci(engine_path)
         elif engine_protocol == 'xboard':
@@ -62,24 +67,24 @@ class Bot:
         else:
             print('Engine name is unknown')
 
-        print('Engine options')
-        for option in self.engine.options:
-            print(option)
-
         options = {'UCI_LimitStrength': 'true',
-                   'UCI_Elo': ENGINE_ELO}
+                   'UCI_Elo': self.config['engine'].getint('elo')}
 
         for option in list(options.keys()):
-            if option not in self.engine.options:
+            if option in self.engine.options:
                 print(f'{option} is not an option for this engine')
                 del options[option]
 
         self.engine.configure(options)
 
+        print('Engine options')
+        for option in self.engine.options.values():
+            print(option)
+
     def setup_browser(self):
         self.driver.maximize_window()
         self.driver.get(START_URL)
-        self.login(USERNAME, PASSWORD)
+        self.login(self.config['settings']['username'], self.config['settings']['password'])
         self.driver.get(PLAY_CHESS_URL)
 
     def setup_selenium_chess(self):
@@ -89,7 +94,10 @@ class Bot:
     def run(self):
         while True:
             try:
-                time.sleep(1)
+                # print(f'sleep factor = {self.sleep_factor}')
+                # time.sleep(self.sleep_factor)
+                # self.sleep_factor = min(self.sleep_factor * 2, 10)
+                time.sleep(0.1)
 
                 start_time = time.time()
 
@@ -99,16 +107,24 @@ class Bot:
 
                 intermediate_start_time = time.time()
 
+                self.last_move_list = list(self.move_list)
+                self.scrape_move_list()
+
+                # check if position has updated
+                if len(self.move_list) != len(self.last_move_list):
+                    print('Position has changed')
+                    self.position_eval_count = 0
+                elif self.position_eval_count > self.config['engine'].getint('evaluation_tries'):
+                    continue
+
+                print('Time to get moves: {0} seconds'.format(time.time() - intermediate_start_time))
+
+                intermediate_start_time = time.time()
+
                 self.interface.update_variables()
                 self.player = self.interface.find_player_colour()
 
                 print('Time to update variables: {0} seconds'.format(time.time() - intermediate_start_time))
-
-                intermediate_start_time = time.time()
-
-                self.scrape_move_list()
-
-                print('Time to get moves: {0} seconds'.format(time.time() - intermediate_start_time))
 
                 print('Player = {0}'.format(self.player))
                 print('Move list = {0}'.format(self.move_list))
@@ -147,7 +163,7 @@ class Bot:
                 print('{0} is playing'.format(turn_name))
                 for i in range(len(self.engine_moves)):
                     output_line = f'Move {i} = {self.engine_moves[i]}, Score = {self.engine_scores[i]}'
-                    if USING_MULTIPV:
+                    if self.config['engine'].getboolean('use_multipv'):
                         try:
                             output_line += f', PV = {self.board.variation_san(self.engine_infos[i]["pv"])}'
                         except Exception as e:
@@ -160,8 +176,12 @@ class Bot:
 
                 print('Time to display: {0} seconds'.format(time.time() - intermediate_start_time))
 
+                self.position_eval_count += 1
+
                 end_time = time.time()
                 print('Time elapsed = {0}s'.format(end_time - start_time))
+
+                time.sleep(1)
             except StaleElementReferenceException:
                 print('Stale elements. Retrying...')
             except Exception as exception:
@@ -187,12 +207,13 @@ class Bot:
 
     def engine_eval(self):
         try:
-            if USING_MULTIPV and 'MultiPV' in self.engine.options:
+            if self.config['engine'].getboolean('use_multipv') and 'MultiPV' in self.engine.options:
                 self.engine_infos.clear()
                 self.engine_moves.clear()
                 self.engine_scores.clear()
 
-                infos = self.engine.analyse(self.board, self.limit, multipv=MULTIPV_MOVE_COUNT)
+                infos = self.engine.analyse(self.board, self.limit,
+                                            multipv=self.config['engine'].getint('multipv_count'))
                 self.engine_infos = infos
                 for i in range(len(infos)):
                     info = infos[i]
@@ -208,21 +229,22 @@ class Bot:
 
             self.load_engine('stockfish')
             self.engine_eval()
-            self.load_engine(ENGINE_NAME)
+            self.load_engine(self.config['engine']['name'])
 
     def display_moves(self):
         try:
             main_ctx_name = self.cvs_ctx[0][1]
             self.interface.graphics.clear_context(main_ctx_name)
-            if USING_MULTIPV:
-                if DRAW_TYPE == 'square':
+            if self.config['engine'].getboolean('use_multipv'):
+                if self.config['interface']['draw_type'] == 'square':
                     for i in range(len(self.engine_moves)):
                         self.interface.graphics.set_styles(main_ctx_name,
-                                                           fillStyle=MULTIPV_MOVE_COLOURS[i - MULTIPV_MOVE_COUNT])
+                                                           fillStyle=MULTIPV_MOVE_COLOURS[
+                                                               i - self.config['engine'].getint('multipv_count')])
                         self.interface.draw_move_squares(main_ctx_name, self.engine_moves[i], self.player)
                         self.interface.draw_score(main_ctx_name, self.engine_moves[i], self.engine_scores[i],
                                                   self.player)
-                elif DRAW_TYPE == 'arrow':
+                elif self.config['interface']['draw_type'] == 'arrow':
                     alpha_step = 1 / len(self.engine_moves)
                     for i in range(len(self.engine_moves)):
                         alpha = 1 - (i * alpha_step)
@@ -231,10 +253,10 @@ class Bot:
                         self.interface.draw_score(main_ctx_name, self.engine_moves[i], self.engine_scores[i],
                                                   self.player)
             else:
-                if DRAW_TYPE == 'square':
+                if self.config['interface']['draw_type'] == 'square':
                     self.interface.graphics.set_styles(main_ctx_name, fillStyle="'blue'", globalAlpha='0.25')
                     self.interface.draw_move_squares(main_ctx_name, self.engine_moves[0], self.player)
-                elif DRAW_TYPE == 'arrow':
+                elif self.config['interface']['draw_type'] == 'arrow':
                     self.interface.graphics.set_styles(main_ctx_name, fillStyle="'black'", globalAlpha='1.0')
                     self.interface.draw_move_arrows(main_ctx_name, self.engine_moves[0], self.player)
                 self.interface.draw_score(main_ctx_name, self.engine_moves[0], self.engine_scores[0], self.player)
