@@ -11,12 +11,6 @@ MULTIPV_MOVE_COLOURS = ["'red'", "'salmon'", "'darkred'"]
 
 START_URL = 'https://www.chess.com/login_and_go?returnUrl=https%3A//www.chess.com/register'
 PLAY_CHESS_URL = 'https://www.chess.com/live/'
-
-# USERNAME = 'orgnaan'
-# PASSWORD = 'narnia'
-# USERNAME = "FoolGarbage"
-# PASSWORD = "manastry"
-
 START_POS_FEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1'
 
 if os.name == 'nt':
