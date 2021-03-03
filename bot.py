@@ -231,6 +231,33 @@ class Bot:
             self.engine_eval()
             self.load_engine(self.config['engine']['name'])
 
+    def draw_evaluation(self, context, move, score, player):
+        main_ctx_name = self.cvs_ctx[0][1]
+        if score.relative.is_mate():
+            if score.relative > chess.engine.Cp(0):
+                fill_style = "'Blue'"
+            else:
+                fill_style = "'DarkRed'"
+        else:
+            numeric_score = score.relative.score()
+            if numeric_score > 0:
+                fill_style = "'Green'"
+            elif numeric_score < 0:
+                fill_style = "'Red'"
+            else:
+                fill_style = "'Gray'"
+
+        if self.config['interface'].getboolean('draw_wdl'):
+            pov_wdl = score.wdl(ply=len(self.move_list))
+            wdl = pov_wdl.relative
+            win_prob, draw_prob, loss_prob = wdl.winning_chance(), wdl.drawing_chance(), wdl.losing_chance()
+            expected_game_score = wdl.expectation()
+            evaluation_text = f'{score.relative} ({int(100 * win_prob)}%)'
+        else:
+            evaluation_text = str(score.relative)
+
+        self.interface.draw_move_text(main_ctx_name, move, evaluation_text, player, fill_style)
+
     def display_moves(self):
         try:
             main_ctx_name = self.cvs_ctx[0][1]
@@ -239,27 +266,25 @@ class Bot:
                 if self.config['interface']['draw_type'] == 'square':
                     for i in range(len(self.engine_moves)):
                         self.interface.graphics.set_styles(main_ctx_name,
-                                                           fillStyle=MULTIPV_MOVE_COLOURS[
+                                                           fill_style=MULTIPV_MOVE_COLOURS[
                                                                i - self.config['engine'].getint('multipv_count')])
                         self.interface.draw_move_squares(main_ctx_name, self.engine_moves[i], self.player)
-                        self.interface.draw_score(main_ctx_name, self.engine_moves[i], self.engine_scores[i],
-                                                  self.player)
+                        self.draw_evaluation(main_ctx_name, self.engine_moves[i], self.engine_scores[i], self.player)
                 elif self.config['interface']['draw_type'] == 'arrow':
                     alpha_step = 1 / len(self.engine_moves)
                     for i in range(len(self.engine_moves)):
                         alpha = 1 - (i * alpha_step)
-                        self.interface.graphics.set_styles(main_ctx_name, fillStyle="'black'", globalAlpha=str(alpha))
+                        self.interface.graphics.set_styles(main_ctx_name, fill_style="'black'", global_alpha=str(alpha))
                         self.interface.draw_move_arrows(main_ctx_name, self.engine_moves[i], self.player)
-                        self.interface.draw_score(main_ctx_name, self.engine_moves[i], self.engine_scores[i],
-                                                  self.player)
+                        self.draw_evaluation(main_ctx_name, self.engine_moves[i], self.engine_scores[i], self.player)
             else:
                 if self.config['interface']['draw_type'] == 'square':
-                    self.interface.graphics.set_styles(main_ctx_name, fillStyle="'blue'", globalAlpha='0.25')
+                    self.interface.graphics.set_styles(main_ctx_name, fill_style="'blue'", global_alpha='0.25')
                     self.interface.draw_move_squares(main_ctx_name, self.engine_moves[0], self.player)
                 elif self.config['interface']['draw_type'] == 'arrow':
-                    self.interface.graphics.set_styles(main_ctx_name, fillStyle="'black'", globalAlpha='1.0')
+                    self.interface.graphics.set_styles(main_ctx_name, fill_style="'black'", global_alpha='1.0')
                     self.interface.draw_move_arrows(main_ctx_name, self.engine_moves[0], self.player)
-                self.interface.draw_score(main_ctx_name, self.engine_moves[0], self.engine_scores[0], self.player)
+                self.interface.draw_move_text(main_ctx_name, self.engine_moves[0], self.engine_scores[0], self.player)
         except Exception as e:
             print('Exception displaying moves: {0}'.format(e))
             print('Recreating contexts')

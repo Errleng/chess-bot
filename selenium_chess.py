@@ -118,7 +118,7 @@ class SeleniumChess:
         self.graphics.set_styles(context_name, visibility="'visible'")
         self.graphics.draw_arrow(context_name, first_pos, second_pos)
 
-    def draw_score(self, context_name, move, score, bottom_color):
+    def get_move_text_pos(self, move, bottom_color):
         move_uci_string = move.uci()
         center_offset = self.piece_dim // 2
         start_ply = move_uci_string[:2]
@@ -130,19 +130,8 @@ class SeleniumChess:
         second_pos.x += center_offset
         second_pos.y += center_offset
         text_pos = Vector2D((first_pos.x + second_pos.x) / 2, (first_pos.y + second_pos.y) / 2)
+        return text_pos
 
-        relative_score = score.relative
-        if relative_score.is_mate():
-            if relative_score > chess.engine.Cp(0):
-                fillStyle = "'Blue'"
-            else:
-                fillStyle = "'DarkRed'"
-        else:
-            numeric_score = relative_score.score()
-            if numeric_score > 0:
-                fillStyle = "'Green'"
-            elif numeric_score < 0:
-                fillStyle = "'Red'"
-            else:
-                fillStyle = "'Gray'"
-        self.graphics.draw_centered_text(context_name, str(score), text_pos, fillStyle=fillStyle)
+    def draw_move_text(self, context_name, move, text, bottom_color, fill_style):
+        text_pos = self.get_move_text_pos(move, bottom_color)
+        self.graphics.draw_centered_text(context_name, text, text_pos, fill_style=fill_style)

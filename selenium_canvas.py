@@ -69,19 +69,19 @@ class SeleniumCanvas:
         script = "{0}.clearRect(0, 0, {1}.width, {1}.height);".format(context.name, context.canvas.name)
         self.driver.execute_script(script)
 
-    def set_styles(self, context_name, visibility=None, strokeStyle=None, fillStyle=None, globalAlpha=None, font=None):
+    def set_styles(self, context_name, visibility=None, stroke_style=None, fill_style=None, global_alpha=None, font=None):
         context = self.contexts[context_name]
         canvas_name = context.canvas.name
 
         script = ""
         if visibility is not None:
             script += "{0}.style.visibility = {1};".format(canvas_name, visibility)
-        if strokeStyle is not None:
-            script += "{0}.strokeStyle = {1};".format(canvas_name, strokeStyle)
-        if fillStyle is not None:
-            script += "{0}.fillStyle = {1};".format(context.name, fillStyle)
-        if globalAlpha is not None:
-            script += "{0}.globalAlpha = {1};".format(context.name, globalAlpha)
+        if stroke_style is not None:
+            script += "{0}.strokeStyle = {1};".format(canvas_name, stroke_style)
+        if fill_style is not None:
+            script += "{0}.fillStyle = {1};".format(context.name, fill_style)
+        if global_alpha is not None:
+            script += "{0}.globalAlpha = {1};".format(context.name, global_alpha)
         if font is not None:
             script += "{0}.font = {1};".format(context.name, font)
 
@@ -92,17 +92,17 @@ class SeleniumCanvas:
         script = "{0}.fillText({1}, {2}, {3});".format(context.name, text, pos.x, pos.y)
         self.driver.execute_script(script)
 
-    def draw_centered_text(self, context_name, text, pos, strokeStyle="'black'", fillStyle=None):
+    def draw_centered_text(self, context_name, text, pos, stroke_style="'black'", fill_style=None):
         context = self.contexts[context_name]
         script = ""
         script += "{0}.textAlign = 'center';".format(context.name)
 
-        if strokeStyle is not None:
-            self.set_styles(context.name, strokeStyle=strokeStyle, globalAlpha='1.0')
+        if stroke_style is not None:
+            self.set_styles(context.name, stroke_style=stroke_style, global_alpha='1.0')
         script += "{0}.strokeText('{1}', {2}, {3});".format(context.name, text, pos.x, pos.y)
 
-        if fillStyle is not None:
-            self.set_styles(context.name, fillStyle=fillStyle)
+        if fill_style is not None:
+            self.set_styles(context.name, fill_style=fill_style)
         script += "{0}.fillText('{1}', {2}, {3});".format(context.name, text, pos.x, pos.y)
 
         self.driver.execute_script(script)
