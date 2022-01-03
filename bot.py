@@ -1,4 +1,5 @@
 import time
+import traceback
 from configparser import ConfigParser
 
 import chess
@@ -186,6 +187,7 @@ class Bot:
                 print('Stale elements. Retrying...')
             except Exception as exception:
                 print(f'Main loop exception: {exception}')
+                print(traceback.format_exc())
 
     def scrape_move_list(self):
         # if len(self.move_list) > 0:
@@ -252,7 +254,7 @@ class Bot:
             wdl = pov_wdl.relative
             win_prob, draw_prob, loss_prob = wdl.winning_chance(), wdl.drawing_chance(), wdl.losing_chance()
             expected_game_score = wdl.expectation()
-            evaluation_text = f'{score.relative} ({int(100 * win_prob)}%)'
+            evaluation_text = f'{score.relative}'  # ({int(100 * win_prob)}%) to display winning chance
         else:
             evaluation_text = str(score.relative)
 

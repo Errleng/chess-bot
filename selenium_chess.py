@@ -12,13 +12,11 @@ from vector_2d import Vector2D
 class SeleniumChess:
     def __init__(self, driver):
         self.patterns = {
-            'chessboard': 'game-board',
-            'bottom_player_white': 'board-player-default-component board-player-default-bottom board-player-default-white undefined',
-            'bottom_player_black': 'board-player-default-component board-player-default-bottom board-player-default-black undefined',
-            'top_player_white': 'board-player-default-component board-player-default-bottom board-player-default-white undefined',
-            'top_player_black': 'board-player-default-component board-player-default-bottom board-player-default-black undefined',
-            'move': 'vertical-move-list-clickable',
-            'selected_move': 'move-text-selectednf',
+            'chessboard': 'chess-board',
+            'bottom_player_white': '.clock-white.clock-bottom',
+            'bottom_player_black': '.clock-black.clock-bottom',
+            'move': '.node',
+            'selected_move': '.node.selected',
         }
 
         self.driver = driver
@@ -33,7 +31,7 @@ class SeleniumChess:
 
     def try_set_elements(self):
         try:
-            self.board = self.driver.find_element_by_id(self.patterns['chessboard'])
+            self.board = self.driver.find_element_by_css_selector(self.patterns['chessboard'])
         except NoSuchElementException:
             return False  # All elements must be found. No point in continuing if even one is missing
         except Exception as e:
@@ -49,19 +47,18 @@ class SeleniumChess:
 
     def find_player_colour(self):
         try:
-            self.driver.find_element_by_xpath("//div[@class='{0}']".format(self.patterns['bottom_player_white']))
+            self.driver.find_element_by_css_selector(self.patterns['bottom_player_white'])
             return Side.WHITE
         except NoSuchElementException:  # Not white
             try:
-                self.driver.find_element_by_xpath("//div[@class='{0}']".format(self.patterns['bottom_player_black']))
+                self.driver.find_element_by_css_selector(self.patterns["bottom_player_black"])
                 return Side.BLACK
             except NoSuchElementException:  # Not white or black
                 return Side.NEITHER
 
     def get_selected_move(self):
         try:
-            selected_move = self.driver.find_element_by_xpath(
-                "//span[@class='{0}']".format(self.patterns['selected_move']))
+            selected_move = self.driver.find_element_by_css_selector(self.patterns["selected_move"])
             return selected_move.text
         except NoSuchElementException:
             print('Latest move not found')
@@ -69,10 +66,10 @@ class SeleniumChess:
 
     def get_move_list(self):
         script = ""
-        script += "let elements = document.getElementsByClassName('{0}');".format(self.patterns['move'])
-        script += "let contents = [];"
-        script += "for (let i = 0; i < elements.length; i++) { contents.push(elements[i].innerText); }"
-        script += "return contents;"
+        script += f"const moves = document.querySelectorAll('{self.patterns['move']}');"
+        script += 'console.log(moves);'
+        script += "if (moves === null) { return [] }"
+        script += "return [...moves].map((move) => move.innerText);"
 
         try:
             move_list = self.driver.execute_script(script)
